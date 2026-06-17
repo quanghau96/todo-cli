@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type Todo struct {
@@ -23,11 +24,8 @@ func loadTodos() []Todo {
 	var todos []Todo
 	err = json.Unmarshal(file, &todos)
 	if err != nil {
-		fmt.Println("todos::: 2 ", todos)
 		return []Todo{}
 	}
-
-	fmt.Println("todos::: 1 ", todos)
 
 	return todos
 }
@@ -48,7 +46,6 @@ func saveTodos(todos []Todo) {
 
 func addTodo(title string) {
 	todos := loadTodos()
-	fmt.Println("todos::: ", todos)
 	newTodo := Todo{
 		ID:        len(todos) + 1,
 		Title:     title,
@@ -59,6 +56,53 @@ func addTodo(title string) {
 	saveTodos(todos)
 
 	fmt.Printf("Added todo: %s\n", title)
+}
+
+func listTodos() {
+	todos := loadTodos()
+	if len(todos) == 0 {
+		fmt.Println("No todos found")
+		return
+	}
+
+	for _, todo := range todos {
+		status := "❌"
+		if todo.Completed {
+			status = "✅"
+		}
+
+		fmt.Printf("%d. %s %s\n", todo.ID, status, todo.Title)
+	}
+}
+
+func markDone(id int) {
+	var todos []Todo
+	todos = loadTodos()
+
+	for i, todo := range todos {
+		if todo.ID == id {
+			todos[i].Completed = true
+
+			fmt.Println("Marked as done:::", todos[i].Title)
+			saveTodos(todos)
+
+			return
+		}
+	}
+}
+
+func delete(id int) {
+	var todos []Todo
+	todos = loadTodos()
+
+	for i, todo := range todos {
+		if todo.ID == id {
+			todos = append(todos[:i], todos[i+1:]...)
+			saveTodos(todos)
+			fmt.Println("Deleted::: ", todo.Title)
+			return
+		}
+	}
 }
 
 func printHelp() {
@@ -91,20 +135,30 @@ func main() {
 		addTodo(title)
 
 	case "list":
+		listTodos()
 	case "complete":
 		if len(args) < 3 {
 			fmt.Println("Please provide the ID of the todo to complete")
 			return
 		}
-		id := args[2]
-		fmt.Printf("Completing todo with ID: %s\n", id)
+
+		id, err := strconv.Atoi(args[2])
+		if err != nil {
+			fmt.Println("Conversion error:", err)
+		}
+
+		markDone(id)
 	case "delete":
 		if len(args) < 3 {
 			fmt.Println("Please provide the ID of the todo to delete")
 			return
 		}
-		id := args[2]
-		fmt.Printf("Deleting todo with ID: %s\n", id)
+		id, err := strconv.Atoi(args[2])
+		if err != nil {
+			fmt.Println("Conversion error:", err)
+		}
+
+		delete(id)
 	default:
 		printHelp()
 	}
