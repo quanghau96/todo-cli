@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -12,6 +13,53 @@ type Todo struct {
 }
 
 const fileName = "todos.json"
+
+func loadTodos() []Todo {
+	file, err := os.ReadFile(fileName)
+	if err != nil {
+		fmt.Println("Error loading file::: ", err)
+	}
+
+	var todos []Todo
+	err = json.Unmarshal(file, &todos)
+	if err != nil {
+		fmt.Println("todos::: 2 ", todos)
+		return []Todo{}
+	}
+
+	fmt.Println("todos::: 1 ", todos)
+
+	return todos
+}
+
+func saveTodos(todos []Todo) {
+	data, err := json.MarshalIndent(todos, "", "  ")
+	if err != nil {
+		fmt.Println("Error encoding todos:::", err)
+		return
+	}
+
+	err = os.WriteFile(fileName, data, 0o644)
+	if err != nil {
+		fmt.Println("Something went wrong::: ", err)
+		return
+	}
+}
+
+func addTodo(title string) {
+	todos := loadTodos()
+	fmt.Println("todos::: ", todos)
+	newTodo := Todo{
+		ID:        len(todos) + 1,
+		Title:     title,
+		Completed: false,
+	}
+
+	todos = append(todos, newTodo)
+	saveTodos(todos)
+
+	fmt.Printf("Added todo: %s\n", title)
+}
 
 func printHelp() {
 	fmt.Printf("Todo CLI \n\n")
@@ -40,9 +88,9 @@ func main() {
 			return
 		}
 		title := args[2]
-		fmt.Printf("Adding todo: %s\n", title)
+		addTodo(title)
+
 	case "list":
-		fmt.Println("Listing all todos")
 	case "complete":
 		if len(args) < 3 {
 			fmt.Println("Please provide the ID of the todo to complete")
